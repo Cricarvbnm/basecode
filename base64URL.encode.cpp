@@ -7,6 +7,6 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  std::cout << basecode::Base64::encode(argv[1]);
+  std::cout << basecode::Base64URL::encode(argv[1]);
   return 0;
 }

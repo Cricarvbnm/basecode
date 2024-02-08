@@ -7,6 +7,6 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  std::cout << basecode::base64::decode(argv[1]);
+  std::cout << basecode::Base64::decode(argv[1]);
   return 0;
 }
