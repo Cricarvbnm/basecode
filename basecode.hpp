@@ -32,7 +32,7 @@ public:
   static std::string decode(const Code &);
 
 private:
-  static Code __groupToCode(__Bits &group);
+  static Code __groupToCode(__Bits &group, bool padding = true);
   static std::string __groupToText(__Bits &group);
 
   // ---
@@ -76,7 +76,6 @@ template <> inline auto Base64URL::__initialBaseSet() noexcept -> Code {
 
   result += '-';
   result += '_';
-  result += '\0';
 
   return result;
 }
@@ -158,7 +157,7 @@ inline auto BaseCode<single_size, id>::encode(const std::string &text) -> Code {
   }
 
   if (count != 0) {
-    code += __groupToCode(group);
+    code += __groupToCode(group, id != 1);
   }
 
   return code;
@@ -199,7 +198,8 @@ inline std::string BaseCode<single_size, id>::decode(const Code &code) {
 }
 
 template <int single_size, int id>
-inline auto BaseCode<single_size, id>::__groupToCode(__Bits &group) -> Code {
+inline auto BaseCode<single_size, id>::__groupToCode(__Bits &group,
+                                                     bool padding) -> Code {
   using std::string;
 
   string code;
@@ -216,10 +216,11 @@ inline auto BaseCode<single_size, id>::__groupToCode(__Bits &group) -> Code {
     code += base_set.operator[](single_code);
   }
 
-  for (auto padding_count = __single_count - code.size(); padding_count > 0;
-       --padding_count) {
-    code += base_set.operator[](__set_len);
-  }
+  if (padding)
+    for (auto padding_count = __single_count - code.size(); padding_count > 0;
+         --padding_count) {
+      code += base_set.operator[](__set_len);
+    }
 
   return code;
 }
