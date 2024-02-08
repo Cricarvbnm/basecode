@@ -4,127 +4,187 @@
 #include <string>
 
 namespace basecode {
-using CodeSet = std::string;
-} // namespace basecode
 
-namespace basecode::base64 {
-using Code = std::string;
-extern const CodeSet base_set;
+template <int single_size> class BaseCode {
+private:
+  static constexpr int __leastCommonMultiple(int a, int b);
+  static constexpr int __pow2(int x);
+  static std::string __initialBaseSet() noexcept;
 
-Code encode(const std::string &text);
-std::string decode(const Code &code);
-} // namespace basecode::base64
+  static constexpr int __byte_size = 8;
+  static constexpr int __group_size =
+      __leastCommonMultiple(single_size, __byte_size);
+  static constexpr int __single_count = __group_size / single_size;
+  static constexpr int __byte_count = __group_size / __byte_size;
+  static constexpr int __set_len = __pow2(single_size);
 
-namespace basecode::detail {
-using Bits = std::string;
+private:
+  using __Bits = std::string;
+
+public:
+  using CodeSet = std::string;
+  using Code = std::string;
+
+  static const CodeSet base_set;
+
+public:
+  static Code encode(const std::string &text);
+  static std::string decode(const Code &);
+
+private:
+  static Code __groupToCode(__Bits &group);
+  static std::string __groupToText(__Bits &group);
+
+  // ---
+
+public:
+  ~BaseCode() = delete;
+};
+using Base64 = BaseCode<6>;
+template <> inline auto Base64::__initialBaseSet() noexcept -> Code {
+  CodeSet result;
+
+  for (char c = 'A'; c <= 'Z'; ++c)
+    result += c;
+
+  for (char c = 'a'; c <= 'z'; ++c)
+    result += c;
+
+  for (char c = '0'; c <= '9'; ++c)
+    result += c;
+
+  result += '+';
+  result += '/';
+  result += '=';
+
+  return result;
 }
 
-namespace basecode::base64::detail {
-constexpr int single_size = 6;
-constexpr int single_count = 4;
-constexpr int byte_count = 3;
-constexpr int group_size = 24;
-constexpr int set_len = 64;
+using Base32 = BaseCode<5>;
+template <> inline auto Base32::__initialBaseSet() noexcept -> Code {
+  CodeSet result;
 
-CodeSet initSet() noexcept;
+  for (char c = 'A'; c <= 'Z'; ++c)
+    result += c;
 
-Code groupToCode(basecode::detail::Bits &group);
-std::string groupToText(basecode::detail::Bits &group);
-} // namespace basecode::base64::detail
+  for (char c = '2'; c <= '7'; ++c)
+    result += c;
+
+  result += '=';
+
+  return result;
+}
+
+using Base16 = BaseCode<4>;
+template <> inline auto Base16::__initialBaseSet() noexcept -> Code {
+  CodeSet result;
+
+  for (char c = '0'; c <= '9'; ++c)
+    result += c;
+
+  for (char c = 'A'; c <= 'Z'; ++c)
+    result += c;
+
+  return result;
+}
+
+template <int single_size>
+inline const typename BaseCode<single_size>::CodeSet
+    BaseCode<single_size>::base_set = BaseCode<single_size>::__initialBaseSet();
 
 // ---
 
-namespace basecode::base64 {
-inline const CodeSet base_set = detail::initSet();
+template <int single_size>
+inline constexpr int BaseCode<single_size>::__pow2(int x) {
+  int result = 1;
+  for (; x > 0; --x) {
+    result *= 2;
+  }
+  return result;
+}
 
-inline Code encode(const std::string &text) {
+template <int single_size>
+inline constexpr int BaseCode<single_size>::__leastCommonMultiple(int a,
+                                                                  int b) {
+  int max = a > b ? a : b;
+
+  int result = 0;
+  for (result = max; result % a != 0 || result % b != 0; result += max)
+    ;
+
+  return result;
+}
+
+template <int single_size>
+inline auto BaseCode<single_size>::encode(const std::string &text) -> Code {
 
   using std::string;
-  auto toBits = [](char c) { return std::bitset<8>(c).to_string(); };
+  auto toBits = [](char c) { return std::bitset<__byte_size>(c).to_string(); };
 
   string code;
-  basecode::detail::Bits group;
+  __Bits group;
 
   int count = 0;
   for (auto c : text) {
     group += toBits(c);
     ++count;
 
-    if (count == detail::byte_count) {
-      code += detail::groupToCode(group);
+    if (count == __byte_count) {
+      code += __groupToCode(group);
       group.clear();
       count = 0;
     }
   }
 
   if (count != 0) {
-    code += detail::groupToCode(group);
+    code += __groupToCode(group);
   }
 
   return code;
 }
 
-inline std::string decode(const Code &code) {
+template <int single_size>
+inline std::string BaseCode<single_size>::decode(const Code &code) {
   using std::string;
   string text;
-  basecode::detail::Bits group;
+  BaseCode::__Bits group;
   auto toBits = [](int single_code) {
-    return std::bitset<6>(single_code).to_string();
+    return std::bitset<single_size>(single_code).to_string();
   };
 
   int count = 0;
   for (auto c : code) {
     auto single_code = base_set.find(c);
 
-    if (single_code != detail::set_len) {
+    if (single_code != __set_len) {
       group += toBits(single_code);
       ++count;
     } else {
       break;
     }
 
-    if (count == detail::single_count) {
-      text += detail::groupToText(group);
+    if (count == __single_count) {
+      text += __groupToText(group);
       count = 0;
       group.clear();
     }
   }
 
   if (count != 0) {
-    text += detail::groupToText(group);
+    text += __groupToText(group);
   }
 
   return text;
 }
-} // namespace basecode::base64
 
-namespace basecode::base64::detail {
-inline CodeSet initSet() noexcept {
-  CodeSet rtn;
-
-  for (char c = 'A'; c <= 'Z'; ++c)
-    rtn += c;
-
-  for (char c = 'a'; c <= 'z'; ++c)
-    rtn += c;
-
-  for (char c = '0'; c <= '9'; ++c)
-    rtn += c;
-
-  rtn += '+';
-  rtn += '/';
-  rtn += '=';
-
-  return rtn;
-}
-
-inline Code groupToCode(basecode::detail::Bits &group) {
+template <int single_size>
+inline auto BaseCode<single_size>::__groupToCode(__Bits &group) -> Code {
   using std::string;
 
   string code;
 
   auto group_lack = single_size - (group.size() % single_size);
-  if (group_lack != single_size)
+  if (group_lack != single_size && group_lack != single_size)
     for (; group_lack > 0; --group_lack) {
       group += '0';
     }
@@ -135,15 +195,16 @@ inline Code groupToCode(basecode::detail::Bits &group) {
     code += base_set.at(single_code);
   }
 
-  for (auto padding_count = single_count - code.size(); padding_count > 0;
+  for (auto padding_count = __single_count - code.size(); padding_count > 0;
        --padding_count) {
-    code += base_set.at(set_len);
+    code += base_set.at(__set_len);
   }
 
   return code;
 }
 
-inline std::string groupToText(basecode::detail::Bits &group) {
+template <int single_size>
+inline std::string BaseCode<single_size>::__groupToText(__Bits &group) {
   std::string text;
 
   for (int i = 0; i + 8 <= group.size(); i += 8) {
@@ -154,4 +215,5 @@ inline std::string groupToText(basecode::detail::Bits &group) {
 
   return text;
 }
-} // namespace basecode::base64::detail
+
+} // namespace basecode
