@@ -5,7 +5,7 @@
 
 namespace basecode {
 
-template <int single_size> class BaseCode {
+template <int single_size, int id = 0> class BaseCode {
 private:
   static constexpr int __leastCommonMultiple(int a, int b);
   static constexpr int __pow2(int x);
@@ -40,6 +40,7 @@ private:
 public:
   ~BaseCode() = delete;
 };
+
 using Base64 = BaseCode<6>;
 template <> inline auto Base64::__initialBaseSet() noexcept -> Code {
   CodeSet result;
@@ -56,6 +57,26 @@ template <> inline auto Base64::__initialBaseSet() noexcept -> Code {
   result += '+';
   result += '/';
   result += '=';
+
+  return result;
+}
+
+using Base64URL = BaseCode<6, 1>;
+template <> inline auto Base64URL::__initialBaseSet() noexcept -> Code {
+  CodeSet result;
+
+  for (char c = 'A'; c <= 'Z'; ++c)
+    result += c;
+
+  for (char c = 'a'; c <= 'z'; ++c)
+    result += c;
+
+  for (char c = '0'; c <= '9'; ++c)
+    result += c;
+
+  result += '-';
+  result += '_';
+  result += '\0';
 
   return result;
 }
@@ -82,20 +103,20 @@ template <> inline auto Base16::__initialBaseSet() noexcept -> Code {
   for (char c = '0'; c <= '9'; ++c)
     result += c;
 
-  for (char c = 'A'; c <= 'Z'; ++c)
+  for (char c = 'A'; c <= 'F'; ++c)
     result += c;
 
   return result;
 }
 
-template <int single_size>
-inline const typename BaseCode<single_size>::CodeSet
-    BaseCode<single_size>::base_set = BaseCode<single_size>::__initialBaseSet();
+template <int single_size, int id>
+inline const typename BaseCode<single_size, id>::CodeSet
+    BaseCode<single_size, id>::base_set = __initialBaseSet();
 
 // ---
 
-template <int single_size>
-inline constexpr int BaseCode<single_size>::__pow2(int x) {
+template <int single_size, int id>
+inline constexpr int BaseCode<single_size, id>::__pow2(int x) {
   int result = 1;
   for (; x > 0; --x) {
     result *= 2;
@@ -103,9 +124,9 @@ inline constexpr int BaseCode<single_size>::__pow2(int x) {
   return result;
 }
 
-template <int single_size>
-inline constexpr int BaseCode<single_size>::__leastCommonMultiple(int a,
-                                                                  int b) {
+template <int single_size, int id>
+inline constexpr int BaseCode<single_size, id>::__leastCommonMultiple(int a,
+                                                                      int b) {
   int max = a > b ? a : b;
 
   int result = 0;
@@ -115,8 +136,8 @@ inline constexpr int BaseCode<single_size>::__leastCommonMultiple(int a,
   return result;
 }
 
-template <int single_size>
-inline auto BaseCode<single_size>::encode(const std::string &text) -> Code {
+template <int single_size, int id>
+inline auto BaseCode<single_size, id>::encode(const std::string &text) -> Code {
 
   using std::string;
   auto toBits = [](char c) { return std::bitset<__byte_size>(c).to_string(); };
@@ -143,8 +164,8 @@ inline auto BaseCode<single_size>::encode(const std::string &text) -> Code {
   return code;
 }
 
-template <int single_size>
-inline std::string BaseCode<single_size>::decode(const Code &code) {
+template <int single_size, int id>
+inline std::string BaseCode<single_size, id>::decode(const Code &code) {
   using std::string;
   string text;
   BaseCode::__Bits group;
@@ -177,8 +198,8 @@ inline std::string BaseCode<single_size>::decode(const Code &code) {
   return text;
 }
 
-template <int single_size>
-inline auto BaseCode<single_size>::__groupToCode(__Bits &group) -> Code {
+template <int single_size, int id>
+inline auto BaseCode<single_size, id>::__groupToCode(__Bits &group) -> Code {
   using std::string;
 
   string code;
@@ -192,19 +213,19 @@ inline auto BaseCode<single_size>::__groupToCode(__Bits &group) -> Code {
   for (int i = 0; i < group.size(); i += single_size) {
     string single = group.substr(i, single_size);
     auto single_code = std::stoul(single, nullptr, 2);
-    code += base_set.at(single_code);
+    code += base_set.operator[](single_code);
   }
 
   for (auto padding_count = __single_count - code.size(); padding_count > 0;
        --padding_count) {
-    code += base_set.at(__set_len);
+    code += base_set.operator[](__set_len);
   }
 
   return code;
 }
 
-template <int single_size>
-inline std::string BaseCode<single_size>::__groupToText(__Bits &group) {
+template <int single_size, int id>
+inline std::string BaseCode<single_size, id>::__groupToText(__Bits &group) {
   std::string text;
 
   for (int i = 0; i + 8 <= group.size(); i += 8) {
