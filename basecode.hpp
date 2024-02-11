@@ -32,7 +32,8 @@ public:
   static std::string decode(const Code &);
 
 private:
-  static Code __groupToCode(__Bits &group, bool padding = true);
+  static constexpr bool __needPadding();
+  static Code __groupToCode(__Bits &group);
   static std::string __groupToText(__Bits &group);
 
   // ---
@@ -157,7 +158,7 @@ inline auto BaseCode<single_size, id>::encode(const std::string &text) -> Code {
   }
 
   if (count != 0) {
-    code += __groupToCode(group, id != 1);
+    code += __groupToCode(group);
   }
 
   return code;
@@ -198,8 +199,7 @@ inline std::string BaseCode<single_size, id>::decode(const Code &code) {
 }
 
 template <int single_size, int id>
-inline auto BaseCode<single_size, id>::__groupToCode(__Bits &group,
-                                                     bool padding) -> Code {
+inline auto BaseCode<single_size, id>::__groupToCode(__Bits &group) -> Code {
   using std::string;
 
   string code;
@@ -216,7 +216,7 @@ inline auto BaseCode<single_size, id>::__groupToCode(__Bits &group,
     code += base_set.operator[](single_code);
   }
 
-  if (padding)
+  if (__needPadding())
     for (auto padding_count = __single_count - code.size(); padding_count > 0;
          --padding_count) {
       code += base_set.operator[](__set_len);
@@ -236,6 +236,15 @@ inline std::string BaseCode<single_size, id>::__groupToText(__Bits &group) {
   }
 
   return text;
+}
+
+template <int single_size, int id>
+constexpr bool BaseCode<single_size, id>::__needPadding() {
+  if constexpr (id > 0) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 } // namespace basecode
