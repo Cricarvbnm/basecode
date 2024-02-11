@@ -17,6 +17,9 @@ public:
 
     return -1;
   }
+
+  char operator[](size_t i) const noexcept { return set[i]; }
+  char at(size_t i) const { return set.at(i); }
 };
 
-} // namespace basecode::_::_
+} // namespace basecode::_
