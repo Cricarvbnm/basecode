@@ -59,4 +59,26 @@ Encoding<EncodingID::base32>::getInitialSet() noexcept {
   return EncodingSet<info.set_len>(result_set, '=');
 }
 
+template <>
+inline EncodingSet<getEncodingInfo(EncodingID::base64).set_len>
+Encoding<EncodingID::base64>::getInitialSet() noexcept {
+  constexpr auto set_len = getEncodingInfo(EncodingID::base64).set_len;
+  std::array<char, set_len> result_set;
+
+  int i = 0;
+  for (char chr = 'A'; chr <= 'Z'; ++chr, ++i)
+    result_set[i] = chr;
+
+  for (char chr = 'a'; chr <= 'z'; ++chr, ++i)
+    result_set[i] = chr;
+
+  for (char chr = '0'; chr <= '9'; ++chr, ++i)
+    result_set[i] = chr;
+
+  result_set[i++] = '+';
+  result_set[i++] = '/';
+
+  return EncodingSet<info.set_len>(result_set, '=');
+}
+
 } // namespace basecode::_
