@@ -1,6 +1,7 @@
 #pragma once
 
-#include "encoding.hpp"
+#include "_/encoding.hpp"
+
 #include <algorithm>
 #include <bitset>
 #include <string>
