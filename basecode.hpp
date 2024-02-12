@@ -152,3 +152,10 @@ std::string BaseCode<id>::codeToBits(const std::string &group) {
 }
 
 } // namespace basecode::_
+
+namespace basecode {
+
+using _::EncodingID;
+template <EncodingID id> using BaseCode = _::BaseCode<id>;
+
+} // namespace basecode
