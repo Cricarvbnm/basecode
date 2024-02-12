@@ -1,6 +1,7 @@
 #pragma once
 
 #include "encoding.hpp"
+#include <algorithm>
 #include <bitset>
 #include <string>
 
@@ -66,11 +67,19 @@ void BaseCode<id>::groupToCode(const std::string &group,
   std::string bits = textToBits(group);
   padBits(bits);
 
-  for (int i = 0; i < bits.size(); i += encoding.info.single_size) {
+  int i = 0;
+  for (; i < bits.size(); i += encoding.info.single_size) {
     auto single_bits = bits.substr(i, encoding.info.single_size);
     unsigned single_code = std::stoul(single_bits, nullptr, 2);
     char base_chr = encoding.set[single_code];
     *code_it++ = base_chr;
+  }
+
+  if (encoding.set.pad) {
+    auto pad_number =
+        (encoding.info.group_size - i) / encoding.info.single_size;
+    std::for_each_n(code_it, pad_number,
+                    [](auto &c) { c = *encoding.set.pad; });
   }
 }
 
@@ -99,6 +108,9 @@ void BaseCode<id>::decode(InputIterator code_it, InputIterator code_end,
   int single_count = 0;
   for (char base_chr; code_it != code_end; ++code_it) {
     base_chr = *code_it;
+    if (encoding.set.pad && base_chr == encoding.set.pad.value())
+      break;
+
     group += base_chr;
     single_count++;
 
