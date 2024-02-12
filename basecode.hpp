@@ -21,9 +21,14 @@ private:
   template <typename OutputIterator>
   static void groupToCode(const std::string &group, OutputIterator code_it);
 
-  static std::string toBits(const std::string &bits);
+  static std::string textToBits(const std::string &bits);
 
   static void padBits(std::string &group);
+
+  template <typename OutputIterator>
+  static void groupToText(const std::string &group, OutputIterator text_it);
+
+  static std::string codeToBits(const std::string &group);
 };
 
 // ---
@@ -36,20 +41,20 @@ void BaseCode<id>::encode(InputIterator text_it, InputIterator text_end,
                           OutputIterator code_it) {
   std::string group;
 
-  int single_count = 0;
-  for (char chr; text_it != text_end; ++text_it) {
-    chr = *text_it;
-    group.push_back(chr);
-    ++single_count;
+  int byte_count = 0;
+  for (char text_chr; text_it != text_end; ++text_it) {
+    text_chr = *text_it;
+    group.push_back(text_chr);
+    ++byte_count;
 
-    if (single_count == encoding.info.byte_number) {
+    if (byte_count == encoding.info.byte_number) {
       groupToCode(group, code_it);
       group.clear();
-      single_count = 0;
+      byte_count = 0;
     }
   }
 
-  if (single_count != 0) {
+  if (byte_count != 0) {
     groupToCode(group, code_it);
   }
 }
@@ -58,7 +63,7 @@ template <EncodingID id>
 template <typename OutputIterator>
 void BaseCode<id>::groupToCode(const std::string &group,
                                OutputIterator code_it) {
-  std::string bits = toBits(group);
+  std::string bits = textToBits(group);
   padBits(bits);
 
   for (int i = 0; i < bits.size(); i += encoding.info.single_size) {
@@ -77,10 +82,59 @@ template <EncodingID id> void BaseCode<id>::padBits(std::string &group) {
 }
 
 template <EncodingID id>
-std::string BaseCode<id>::toBits(const std::string &bits) {
+std::string BaseCode<id>::textToBits(const std::string &bits) {
   std::string result;
   for (auto chr : bits) {
     result += std::bitset<encoding.info.byte_size>(chr).to_string();
+  }
+  return result;
+}
+
+template <EncodingID id>
+template <typename InputIterator, typename OutputIterator>
+void BaseCode<id>::decode(InputIterator code_it, InputIterator code_end,
+                          OutputIterator text_it) {
+  std::string group;
+
+  int single_count = 0;
+  for (char base_chr; code_it != code_end; ++code_it) {
+    base_chr = *code_it;
+    group += base_chr;
+    single_count++;
+
+    if (single_count == encoding.info.single_number) {
+      groupToText(group, text_it);
+      group.clear();
+      single_count = 0;
+    }
+  }
+
+  if (single_count != 0) {
+    groupToText(group, text_it);
+  }
+}
+
+template <EncodingID id>
+template <typename OutputIterator>
+void BaseCode<id>::groupToText(const std::string &group,
+                               OutputIterator text_it) {
+  auto bits = codeToBits(group);
+  for (int i = 0; i + encoding.info.byte_size <= bits.size();
+       i += encoding.info.byte_size) {
+    auto byte_bits = bits.substr(i, encoding.info.byte_size);
+    char text_chr = std::stoul(byte_bits, nullptr, 2);
+    *text_it++ = text_chr;
+  }
+}
+
+template <EncodingID id>
+std::string BaseCode<id>::codeToBits(const std::string &group) {
+  std::string result;
+  for (auto base_chr : group) {
+    auto single_code = encoding.set.find(base_chr);
+    auto single_bits =
+        std::bitset<encoding.info.single_size>(single_code).to_string();
+    result += single_bits;
   }
   return result;
 }
