@@ -179,4 +179,16 @@ namespace basecode {
 using _::EncodingID;
 template <EncodingID id> using BaseCode = _::BaseCode<id>;
 
+template <EncodingID id, typename InputIterator, typename OutputIterator>
+inline decltype(auto) encode(InputIterator text_it, InputIterator text_end,
+                             OutputIterator code_it) {
+  return BaseCode<id>::encode(text_it, text_end, code_it);
+}
+
+template <EncodingID id, typename InputIterator, typename OutputIterator>
+inline decltype(auto) decode(InputIterator code_it, InputIterator code_end,
+                             OutputIterator text_it) {
+  return BaseCode<id>::decode(code_it, code_end, text_it);
+}
+
 } // namespace basecode
