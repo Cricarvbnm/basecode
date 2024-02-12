@@ -8,7 +8,7 @@
 
 namespace basecode::_ {
 
-constexpr std::array<EncodingInfo, 3> info_list{4, 5, 6};
+constexpr std::array<EncodingInfo, 5> info_list{4, 5, 6, 6, 6};
 
 constexpr EncodingInfo getEncodingInfo(EncodingID id) noexcept {
   return info_list[static_cast<size_t>(id)];
@@ -79,6 +79,51 @@ Encoding<EncodingID::base64>::getInitialSet() noexcept {
   result_set[i++] = '/';
 
   return EncodingSet<info.set_len>(result_set, '=');
+}
+
+template <>
+inline EncodingSet<getEncodingInfo(EncodingID::base64_url_no_pad).set_len>
+Encoding<EncodingID::base64_url_no_pad>::getInitialSet() noexcept {
+  constexpr auto set_len =
+      getEncodingInfo(EncodingID::base64_url_no_pad).set_len;
+  std::array<char, set_len> result_set;
+
+  int i = 0;
+  for (char chr = 'A'; chr <= 'Z'; ++chr, ++i)
+    result_set[i] = chr;
+
+  for (char chr = 'a'; chr <= 'z'; ++chr, ++i)
+    result_set[i] = chr;
+
+  for (char chr = '0'; chr <= '9'; ++chr, ++i)
+    result_set[i] = chr;
+
+  result_set[i++] = '-';
+  result_set[i++] = '_';
+
+  return EncodingSet<info.set_len>(result_set);
+}
+
+template <>
+inline EncodingSet<getEncodingInfo(EncodingID::base64_url).set_len>
+Encoding<EncodingID::base64_url>::getInitialSet() noexcept {
+  constexpr auto set_len = getEncodingInfo(EncodingID::base64_url).set_len;
+  std::array<char, set_len> result_set;
+
+  int i = 0;
+  for (char chr = 'A'; chr <= 'Z'; ++chr, ++i)
+    result_set[i] = chr;
+
+  for (char chr = 'a'; chr <= 'z'; ++chr, ++i)
+    result_set[i] = chr;
+
+  for (char chr = '0'; chr <= '9'; ++chr, ++i)
+    result_set[i] = chr;
+
+  result_set[i++] = '-';
+  result_set[i++] = '_';
+
+  return EncodingSet<info.set_len>(result_set, '.');
 }
 
 } // namespace basecode::_
