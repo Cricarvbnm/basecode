@@ -4,30 +4,50 @@
 
 #include <algorithm>
 #include <bitset>
+#include <iterator>
 #include <string>
+#include <type_traits>
 
 namespace basecode::_ {
+
+template <typename Iterator>
+using getIteratorCategory =
+    typename std::iterator_traits<Iterator>::iterator_category;
 
 template <EncodingID id> class BaseCode {
   static const Encoding<id> encoding;
 
 public:
-  template <typename InputIterator, typename OutputIterator>
+  template <typename InputIterator, typename OutputIterator,
+            typename = std::enable_if_t<
+                std::is_base_of_v<std::input_iterator_tag,
+                                  getIteratorCategory<InputIterator>> &&
+                std::is_base_of_v<std::output_iterator_tag,
+                                  getIteratorCategory<OutputIterator>>>>
   static void encode(InputIterator text_it, InputIterator text_end,
                      OutputIterator code_it);
-  template <typename InputIterator, typename OutputIterator>
+  template <typename InputIterator, typename OutputIterator,
+            typename = std::enable_if_t<
+                std::is_base_of_v<std::input_iterator_tag,
+                                  getIteratorCategory<InputIterator>> &&
+                std::is_base_of_v<std::output_iterator_tag,
+                                  getIteratorCategory<OutputIterator>>>>
   static void decode(InputIterator code_it, InputIterator code_end,
                      OutputIterator text_it);
 
 private:
-  template <typename OutputIterator>
+  template <typename OutputIterator,
+            typename = std::enable_if_t<std::is_base_of_v<
+                std::output_iterator_tag, getIteratorCategory<OutputIterator>>>>
   static void groupToCode(const std::string &group, OutputIterator code_it);
 
   static std::string textToBits(const std::string &bits);
 
   static void padBits(std::string &group);
 
-  template <typename OutputIterator>
+  template <typename OutputIterator,
+            typename = std::enable_if_t<std::is_base_of_v<
+                std::output_iterator_tag, getIteratorCategory<OutputIterator>>>>
   static void groupToText(const std::string &group, OutputIterator text_it);
 
   static std::string codeToBits(const std::string &group);
@@ -38,7 +58,7 @@ private:
 template <EncodingID id> const Encoding<id> BaseCode<id>::encoding;
 
 template <EncodingID id>
-template <typename InputIterator, typename OutputIterator>
+template <typename InputIterator, typename OutputIterator, typename>
 void BaseCode<id>::encode(InputIterator text_it, InputIterator text_end,
                           OutputIterator code_it) {
   std::string group;
@@ -62,7 +82,7 @@ void BaseCode<id>::encode(InputIterator text_it, InputIterator text_end,
 }
 
 template <EncodingID id>
-template <typename OutputIterator>
+template <typename OutputIterator, typename>
 void BaseCode<id>::groupToCode(const std::string &group,
                                OutputIterator code_it) {
   std::string bits = textToBits(group);
@@ -101,7 +121,7 @@ std::string BaseCode<id>::textToBits(const std::string &bits) {
 }
 
 template <EncodingID id>
-template <typename InputIterator, typename OutputIterator>
+template <typename InputIterator, typename OutputIterator, typename>
 void BaseCode<id>::decode(InputIterator code_it, InputIterator code_end,
                           OutputIterator text_it) {
   std::string group;
@@ -128,7 +148,7 @@ void BaseCode<id>::decode(InputIterator code_it, InputIterator code_end,
 }
 
 template <EncodingID id>
-template <typename OutputIterator>
+template <typename OutputIterator, typename>
 void BaseCode<id>::groupToText(const std::string &group,
                                OutputIterator text_it) {
   auto bits = codeToBits(group);
