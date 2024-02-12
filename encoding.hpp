@@ -43,4 +43,20 @@ getInitialSet<EncodingID::base16>() noexcept {
   return result;
 }
 
+template <>
+inline EncodingSet<getEncodingInfo(EncodingID::base32).set_len>
+getInitialSet<EncodingID::base32>() noexcept {
+  constexpr auto set_len = getEncodingInfo(EncodingID::base32).set_len;
+  std::array<char, set_len> result;
+
+  int i = 0;
+  for (char chr = 'A'; chr <= 'Z'; ++chr, ++i)
+    result[i] = chr;
+
+  for (char chr = '2'; chr <= '7'; ++chr, ++i)
+    result[i] = chr;
+
+  return result;
+}
+
 } // namespace basecode::_
