@@ -14,49 +14,49 @@ constexpr EncodingInfo getEncodingInfo(EncodingID id) noexcept {
   return info_list[static_cast<size_t>(id)];
 }
 
-template <EncodingID id>
-EncodingSet<getEncodingInfo(id).set_len> getInitialSet() noexcept;
-
 template <EncodingID id> struct Encoding {
   static constexpr EncodingInfo info = getEncodingInfo(id);
+
+  static EncodingSet<info.set_len> getInitialSet() noexcept;
+
   static const EncodingSet<info.set_len> set;
 };
 template <EncodingID id>
 const EncodingSet<Encoding<id>::info.set_len> Encoding<id>::set =
-    getInitialSet<id>();
+    getInitialSet();
 
 // ---
 
 template <>
 inline EncodingSet<getEncodingInfo(EncodingID::base16).set_len>
-getInitialSet<EncodingID::base16>() noexcept {
+Encoding<EncodingID::base16>::getInitialSet() noexcept {
   constexpr auto set_len = getEncodingInfo(EncodingID::base16).set_len;
-  std::array<char, set_len> result;
+  std::array<char, set_len> result_set;
 
   int i = 0;
   for (char chr = '0'; chr <= '9'; ++chr, ++i)
-    result[i] = chr;
+    result_set[i] = chr;
 
   for (char chr = 'A'; chr <= 'F'; ++chr, ++i)
-    result[i] = chr;
+    result_set[i] = chr;
 
-  return result;
+  return EncodingSet<info.set_len>(result_set);
 }
 
 template <>
 inline EncodingSet<getEncodingInfo(EncodingID::base32).set_len>
-getInitialSet<EncodingID::base32>() noexcept {
+Encoding<EncodingID::base32>::getInitialSet() noexcept {
   constexpr auto set_len = getEncodingInfo(EncodingID::base32).set_len;
-  std::array<char, set_len> result;
+  std::array<char, set_len> result_set;
 
   int i = 0;
   for (char chr = 'A'; chr <= 'Z'; ++chr, ++i)
-    result[i] = chr;
+    result_set[i] = chr;
 
   for (char chr = '2'; chr <= '7'; ++chr, ++i)
-    result[i] = chr;
+    result_set[i] = chr;
 
-  return result;
+  return EncodingSet<info.set_len>(result_set, '=');
 }
 
 } // namespace basecode::_
